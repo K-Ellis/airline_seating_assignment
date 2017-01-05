@@ -51,8 +51,9 @@ def find_occupied():
                         # print(row[0])
                         # print(row[1])
                         # print(row[2])
-find_occupied()
-print(zeros_array)
+    return zeros_array
+binary_db = find_occupied()
+print(binary_db)
 
 # todo-kieron change the database file when a booking has been made. Using the
 # ones_and_zeros matrix and booking name.
