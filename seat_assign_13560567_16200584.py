@@ -205,6 +205,7 @@ def check_file_name(file_names_list):
     else:
         return False
 
+# save the seating database and bookings file names.
 seating_database, bookings = check_args(sys.argv)
 # print(seating_database, bookings)
 
