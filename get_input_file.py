@@ -1,14 +1,11 @@
-import sqlite3
-import numpy as np
 import sys
 import os
-
 # Can run through the command line with:
-# python seat_assign_13560567_16200584.py airline_seating.db bookings.csv
+# python get_input_file.py airline_seating.db bookings.csv
 
 # Alternatively can also run the program without specifying a seating
 # database and bookings file name initially.
-def check_args(command_Args):
+def check_CM_args(cmArgs):
     # Checks if command line arguments are present, and if not, collects
     # input and output file names. Checks if input files exist.
 
@@ -20,7 +17,7 @@ def check_args(command_Args):
     while len(file_names) != 2:
         # If there is only 1 command line argument (
         # 'seat_assign_13560567_16200584.py') and no file names:
-        if len(command_Args) == 1:
+        if len(cmArgs) == 1:
             # Ask the user to define database and bookings file names
             question = input('Would you like to define a seating database and '
                              'bookings filename? [y/n]: ').upper()
@@ -69,10 +66,9 @@ def check_args(command_Args):
                     # Exit
                     exit("Sorry, only [y/n] accepted. Exiting program. No  "
                          "update to database file. ")
-
         # If 2 command line arguments are given,
         # 'seat_assign_13560567_16200584.py' and another:
-        elif len(command_Args) == 2:
+        elif len(cmArgs) == 2:
             # Ask the user to define database and bookings file names
             question = input('Sorry, you have only entered one file name. '
                              'Would you like to define a seating database and '
@@ -123,15 +119,15 @@ def check_args(command_Args):
                          "update to database file. ")
         # If three commands are given, 'seat_assign_13456456_16200584.py',
         # seating database file name, and bookings file name
-        elif len(command_Args) == 3:
+        elif len(cmArgs) == 3:
             # Append the given file names to the file names list
-            file_names.append(command_Args[1])
-            file_names.append(command_Args[2])
+            file_names.append(cmArgs[1])
+            file_names.append(cmArgs[2])
         # In all other circumstances, use first two arguments as file names
         else:
             # Append the given file names to the file names list
-            file_names.append(command_Args[1])
-            file_names.append(command_Args[2])
+            file_names.append(cmArgs[1])
+            file_names.append(cmArgs[2])
 
         # Check given file names are real files that can be opened
         if not check_file_exists(file_names[0]):
@@ -156,10 +152,6 @@ def check_args(command_Args):
             else:
                 # Exit
                 exit("User exit. No update to database file.")
-
-        # todo-kieron write function to check that the database file is .db
-                # and the bookings file is .csv
-
     # Return file names
     return file_names[0], file_names[1]
 
@@ -167,69 +159,5 @@ def check_file_exists(filename):
     # Return True if the file exists in the directory
     return os.path.isfile(filename)
 
-seating_database, bookings = check_args(sys.argv)
-# print(seating_database, bookings)
-
-# Connect to the database using sqlite2's .connect() method which returns a
-# connection object.
-conn = sqlite3.connect(seating_database)
-# From the connection we get a cursor object.
-cur = conn.cursor()
-
-def create_zeros_array():
-    with conn:
-        cur.execute("SELECT * FROM rows_cols")
-
-        rowscols = cur.fetchone()
-        no_rows = rowscols[0]
-        col_letters = rowscols[1]
-    no_cols = 0
-    col_letters_list =[]
-    for letter in col_letters:
-        no_cols += 1
-        col_letters_list.append(letter)
-    row_col_matrix = np.zeros((no_rows, no_cols))
-
-    #want to return a 1s and zeros matrix
-    return row_col_matrix, col_letters_list
-
-zeros_array, col_letters_list = create_zeros_array()
-# print(zeros_array.shape)
-
-def find_occupied():
-    with conn:
-        cur.execute("SELECT * FROM seating")
-
-        rows = cur.fetchall()
-
-        for row in rows:
-            if row[2]== "":
-                pass
-            else:
-                for letter in col_letters_list:
-                    if row[1] == letter:
-                        # print(letter, col_letters_list.index(letter))
-                        zeros_array[row[0]-1][col_letters_list.index(letter)] \
-                                                                        = 1
-                        # print(row[0])
-                        # print(row[1])
-                        # print(row[2])
-    return zeros_array
-binary_db = find_occupied()
-print(binary_db)
-
-# todo-kieron change the database file when a booking has been made. Using the
-# ones_and_zeros matrix and booking name.
-
-# todo-remi solve seating.
-# When a booking is made, have to store the entries where the the seats are
-# allocated so that the database can also be updated. Could create a new
-# discardable zeros-only matrix, and update it with 1s too, and use it to
-# update the sql database.
-# Or store the booking name, row, and column letter in a separate list... and
-# append the new bookings onto the end of the list. And use this list to update
-# the database. I think this is probably a better idea.
-
-
-# release the resources
-conn.close()
+seating_database, bookings = check_CM_args(sys.argv)
+print(seating_database, bookings)
