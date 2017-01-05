@@ -8,7 +8,9 @@ import os
 
 # Alternatively can also run the program without specifying a seating
 # database and bookings file name initially.
-def check_args(command_Args):
+
+
+def check_args(command_args):
     # Checks if command line arguments are present, and if not, collects
     # input and output file names. Checks if input files exist.
 
@@ -20,7 +22,7 @@ def check_args(command_Args):
     while len(file_names) != 2:
         # If there is only 1 command line argument (
         # 'seat_assign_13560567_16200584.py') and no file names:
-        if len(command_Args) == 1:
+        if len(command_args) == 1:
             # Ask the user to define database and bookings file names
             question = input('Would you like to define a seating database and '
                              'bookings filename? [y/n]: ').upper()
@@ -57,9 +59,9 @@ def check_args(command_Args):
             # If user answers neither Y or N
             else:
                 # If the user wants to try again
-                question = input('Looks like an error. Would you like to try '
-                         'again?  [y/n]: ').upper()
-                if  question == 'Y':
+                question = input('Looks like an error. Would you like to '
+                                 'try again?  [y/n]: ').upper()
+                if question == 'Y':
                     # Restart loop
                     continue
                 elif question == 'N':
@@ -72,9 +74,10 @@ def check_args(command_Args):
 
         # If 2 command line arguments are given,
         # 'seat_assign_13560567_16200584.py' and another:
-        elif len(command_Args) == 2:
+        elif len(command_args) == 2:
             # Ask the user to define database and bookings file names
-            question = input('Sorry, you have only entered one file name. '
+            question = input('Sorry, you need to enter two valid file '
+                             'names. '
                              'Would you like to define a seating database and '
                              'bookings filename? [y/n]: ').upper()
             # If the user wants to enter file names:
@@ -123,49 +126,84 @@ def check_args(command_Args):
                          "update to database file. ")
         # If three commands are given, 'seat_assign_13456456_16200584.py',
         # seating database file name, and bookings file name
-        elif len(command_Args) == 3:
+        elif len(command_args) == 3:
             # Append the given file names to the file names list
-            file_names.append(command_Args[1])
-            file_names.append(command_Args[2])
+            file_names.append(command_args[1])
+            file_names.append(command_args[2])
         # In all other circumstances, use first two arguments as file names
         else:
             # Append the given file names to the file names list
-            file_names.append(command_Args[1])
-            file_names.append(command_Args[2])
+            file_names.append(command_args[1])
+            file_names.append(command_args[2])
 
         # Check given file names are real files that can be opened
         if not check_file_exists(file_names[0]):
             # If not, prompt the user to try again
-            if input("I can't find that file. Would you like to try "
-                     "again? [y/n]: ").upper() == 'Y':
+            question = input("I can't find that database file. Would you "
+                             "like to try again? [y/n]: ").upper()
+            if question == 'Y':
                 # Restart loop
                 file_names = []
                 continue
             # If the user does not want to try again
-            else:
+            elif question == "N":
                 # Exit
                 exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
         elif not check_file_exists(file_names[1]):
             # If not, prompt the user to try again
-            if input("I can't find that file. Would you like to try "
-                     "again? [y/n]: ").upper() == 'Y':
+            question = input("I can't find that bookings file. Would you "
+                             "like to try again? [y/n]: ").upper()
+            if question == 'Y':
                 # Restart loop
                 file_names = []
                 continue
             # If the user does not want to try again
-            else:
+            elif question == "N":
                 # Exit
                 exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
 
         # todo-kieron write function to check that the database file is .db
                 # and the bookings file is .csv
+        if not check_file_name(file_names):
+            question = input("Sorry your file names are either too short or "
+                             "not in the correct format. Would you like to "
+                             "try  again? [y/n]: ").upper()
+            if question == 'Y':
+                # Restart loop
+                file_names = []
+                continue
+            # If the user does not want to try again
+            elif question == "N":
+                # Exit
+                exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
 
     # Return file names
     return file_names[0], file_names[1]
 
+
 def check_file_exists(filename):
     # Return True if the file exists in the directory
     return os.path.isfile(filename)
+
+
+def check_file_name(file_names_list):
+    if len(file_names_list[0]) > 3 and len(file_names_list[1]) > 4:
+        if file_names_list[0][-3:] == ".db" and file_names_list[1][-4:] ==  \
+                ".csv":
+            return True
+        else:
+            return False
+    else:
+        return False
 
 seating_database, bookings = check_args(sys.argv)
 # print(seating_database, bookings)
@@ -176,25 +214,27 @@ conn = sqlite3.connect(seating_database)
 # From the connection we get a cursor object.
 cur = conn.cursor()
 
+
 def create_zeros_array():
     with conn:
         cur.execute("SELECT * FROM rows_cols")
 
-        rowscols = cur.fetchone()
-        no_rows = rowscols[0]
-        col_letters = rowscols[1]
+        rows_cols_list = cur.fetchone()
+        no_rows = rows_cols_list[0]
+        col_letters = rows_cols_list[1]
     no_cols = 0
-    col_letters_list =[]
+    list_of_col_letters = []
     for letter in col_letters:
         no_cols += 1
-        col_letters_list.append(letter)
+        list_of_col_letters.append(letter)
     row_col_matrix = np.zeros((no_rows, no_cols))
 
-    #want to return a 1s and zeros matrix
-    return row_col_matrix, col_letters_list
+    # want to return a 1s and zeros matrix
+    return row_col_matrix, list_of_col_letters
 
 zeros_array, col_letters_list = create_zeros_array()
 # print(zeros_array.shape)
+
 
 def find_occupied():
     with conn:
@@ -203,7 +243,7 @@ def find_occupied():
         rows = cur.fetchall()
 
         for row in rows:
-            if row[2]== "":
+            if row[2] == "":
                 pass
             else:
                 for letter in col_letters_list:
@@ -218,10 +258,10 @@ def find_occupied():
 binary_db = find_occupied()
 print(binary_db)
 
-# todo-kieron change the database file when a booking has been made. Using the
+# todo-Kieron change the database file when a booking has been made. Using the
 # ones_and_zeros matrix and booking name.
 
-# todo-remi solve seating.
+# todo-Remi solve seating.
 # When a booking is made, have to store the entries where the the seats are
 # allocated so that the database can also be updated. Could create a new
 # discardable zeros-only matrix, and update it with 1s too, and use it to
