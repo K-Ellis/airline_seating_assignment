@@ -10,10 +10,11 @@ import os
 # database and bookings file name initially.
 
 
+# A function to check that the command line arguments are present, and if
+# not, collects input and output file names. Checks if input files exist and
+# are valid using check_file_names() and check_files_exist() which are
+# defined later.
 def check_args(command_args):
-    # Checks if command line arguments are present, and if not, collects
-    # input and output file names. Checks if input files exist.
-
     # Initialize blank file names list
     file_names = []
 
@@ -168,8 +169,6 @@ def check_args(command_args):
                 exit("Sorry, only [y/n] accepted. Exiting program. No "
                      "update to database file. ")
 
-        # todo-kieron write function to check that the database file is .db
-                # and the bookings file is .csv
         if not check_file_name(file_names):
             question = input("Sorry your file names are either too short or "
                              "not in the correct format. Would you like to "
@@ -190,11 +189,15 @@ def check_args(command_args):
     return file_names[0], file_names[1]
 
 
+# A function to check that the files exist in the directory
 def check_file_exists(filename):
     # Return True if the file exists in the directory
     return os.path.isfile(filename)
 
 
+# A function to check that the seating database and bookings file names have
+# the correct extensions. Also checks that the file names are greater than
+# zero in length (i.e. they are one or more characters long).
 def check_file_name(file_names_list):
     if len(file_names_list[0]) > 3 and len(file_names_list[1]) > 4:
         if file_names_list[0][-3:] == ".db" and file_names_list[1][-4:] ==  \
@@ -205,17 +208,9 @@ def check_file_name(file_names_list):
     else:
         return False
 
-# save the seating database and bookings file names.
-seating_database, bookings = check_args(sys.argv)
-# print(seating_database, bookings)
 
-# Connect to the database using sqlite2's .connect() method which returns a
-# connection object.
-conn = sqlite3.connect(seating_database)
-# From the connection we get a cursor object.
-cur = conn.cursor()
-
-
+# A function to create an m*n zeros numpy array that has the same dimensions
+#  as the airline seating plane.
 def create_zeros_array():
     with conn:
         cur.execute("SELECT * FROM rows_cols")
@@ -233,10 +228,22 @@ def create_zeros_array():
     # want to return a 1s and zeros matrix
     return row_col_matrix, list_of_col_letters
 
-zeros_array, col_letters_list = create_zeros_array()
-# print(zeros_array.shape)
+
+# A function which gets the information from the "metrics" table in the
+# database. Returns a list which contains: the number of passengers refused
+# and the number of passengers seated away from their party.
+def get_metrics():
+    with conn:
+        cur.execute("SELECT * FROM metrics")
+        metrics_list = cur.fetchone()
+        no_refused = metrics_list[0]
+        no_seated_away = metrics_list[1]
+    metrics_list = [no_refused, no_seated_away]
+    return metrics_list
 
 
+# A function to search through the seating table and update the  m*n zeros
+# array with 1's where ever a seat is occupied.
 def find_occupied():
     with conn:
         cur.execute("SELECT * FROM seating")
@@ -256,20 +263,112 @@ def find_occupied():
                         # print(row[1])
                         # print(row[2])
     return zeros_array
-binary_db = find_occupied()
-print(binary_db)
 
-# todo-Kieron change the database file when a booking has been made. Using the
-# ones_and_zeros matrix and booking name.
+
+# A function to update the seating database with the new booking information.
+# new_booking must be a list of lists in the form (for two seats):
+# [[row number, column letter, name], [row number, column number, name]]
+#
+# or for one booking/seat:
+# [[row number, column letter, name]]
+#
+# So it has to be a list inside a list!
+def update_db(new_booking, new_metrics):
+    for i1 in range(len(new_booking)):
+        with conn:
+            cur.execute("UPDATE seating SET name=? WHERE row=? and seat=?",
+                        (next_new_booking[i1][2], next_new_booking[i1][0],
+                         next_new_booking[i1][1]))
+    with conn:
+        cur.execute("UPDATE metrics SET passengers_refused=?, "
+                    "passengers_separated=?", (new_metrics[0], new_metrics[1]))
+
+
+# save the seating database and bookings file names.
+seating_database, bookings = check_args(sys.argv)
+
+# Connect to the database using sqlite2's .connect() method which returns a
+# connection object.
+conn = sqlite3.connect(seating_database)
+
+# From the connection we get a cursor object.
+cur = conn.cursor()
+
+# Cave the m*n zeros array and the column letters in a list.
+zeros_array, col_letters_list = create_zeros_array()
+
+# Convert the empty zeros array into a ones and zeros array, with ones being
+# present where ever a seat is occupied
+binary_db = find_occupied()
+
+# get the initial metrics from the database
+initial_metrics_list = get_metrics()
+
+
+# -----------------------------------------------------------------------------
+# Testing that the database successfully updates:
+next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
+
+# update_db() works for one booking or multiple bookings, eg:
+# next_new_booking = [[1, "A", "Celine Dione"]]
+
+# Define a metrics list
+new_metrics_list = [10, 0]
+# new_metrics_list = [10, 5]
+
+# update the database with the booking info and metric list
+update_db(next_new_booking, new_metrics_list)
+
+# Print out the seating database - for testing purposes
+with conn:
+    cur.execute("SELECT * FROM seating")
+    seating_bookings = cur.fetchall()
+    print(seating_bookings)
+
+    cur.execute("SELECT * FROM metrics")
+    metrics = cur.fetchall()
+    print(metrics)
+
+
+# -----------------------------------------------------------------------------
+
 
 # todo-Remi solve seating.
-# When a booking is made, have to store the entries where the the seats are
-# allocated so that the database can also be updated. Could create a new
-# discardable zeros-only matrix, and update it with 1s too, and use it to
-# update the sql database.
-# Or store the booking name, row, and column letter in a separate list... and
-# append the new bookings onto the end of the list. And use this list to update
-# the database. I think this is probably a better idea.
+# When a booking is made, save the entries where the the seats are
+# allocated in a list so that the database can also be updated. So store the
+# booking name, row, and column letter in a separate list called
+# "next_new_booking".
+#
+# After solving the seating for each line in the csv file, initialise this list
+# again (start with an empty list for each booking) and append the new bookings
+# in this format: row number, column letter and booking name. A fresh list
+# after every booking makes updating the database easier! :)
+#
+# The function I've written "update_db()" will take each entry in this list
+# ("next_new_booking") and update the database accordingly.
+#
+# The column letters are stored in a list called "col_letters_list".For the
+# sample database, "airline_seating.db" it is in the form ['A', 'C', 'D', 'F'].
+# Use the col_letters_list's indices to convert to and from column numbers and
+# column letters in order to store these letters in the list
+# "next_new_booking".
+#
+#
+#
+# Also can you create a list called "new_metrics_list"? This list needs to
+# be incremented after every booking (you'll have add the new metrics to the
+# old metrics) so the function "update_db()" can just update the "metrics"
+# table in the database. This list should be in the form [number of
+# passengers refused, number of passengers seated away from another member
+# of their party].
+#
+#
+#
+# So the "next_new_booking" list needs to only contain the information from
+# the current booking (no information from previous bookings).
+#
+# And the "new_metrics_list" needs to be a running tally of the metrics
+# (have to add on the new metrics to the old metrics).
 
 
 # release the resources

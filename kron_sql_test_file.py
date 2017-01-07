@@ -41,6 +41,9 @@ def print_entries(name):
             cur.execute("SELECT * FROM seating")
 
             rows = cur.fetchall()
+            print(type(rows[0][0]))
+            print(type(rows[0][1]))
+            print(type(rows[0][2]))
 
             # for row in rows:
             #     print(row)
