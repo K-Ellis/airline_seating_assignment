@@ -300,7 +300,8 @@ zeros_array, col_letters_list = create_zeros_array()
 # Convert the empty zeros array into a ones and zeros array, with ones being
 # present where ever a seat is occupied
 binary_db = find_occupied()
-
+print(binary_db)
+print(type(binary_db))
 # get the initial metrics from the database
 initial_metrics_list = get_metrics()
 
