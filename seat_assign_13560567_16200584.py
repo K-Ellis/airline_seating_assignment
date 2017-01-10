@@ -1,57 +1,375 @@
-import numpy as np
 import sqlite3
+import numpy as np
 import sys
+import os
 
-#Connect to the database using sqlite2's .connect() method which returns a
-#connection object
-conn = sqlite3.connect("airline_seating.db")
-#From the connection we get a cursor object
+# Can run through the command line with:
+# python seat_assign_13560567_16200584.py airline_seating.db bookings.csv
+
+# Alternatively can also run the program without specifying a seating
+# database and bookings file name initially.
+
+
+# A function to check that the command line arguments are present, and if
+# not, collects input and output file names. Checks if input files exist and
+# are valid using check_file_names() and check_files_exist() which are
+# defined later.
+def check_args(command_args):
+    # Initialize blank file names list
+    file_names = []
+
+    # Loop until there are 2 entries in the file names list (one database and
+    # one bookings) or until the user exits.
+    while len(file_names) != 2:
+        # If there is only 1 command line argument (
+        # 'seat_assign_13560567_16200584.py') and no file names:
+        if len(command_args) == 1:
+            # Ask the user to define database and bookings file names
+            question = input('Would you like to define a seating database and '
+                             'bookings filename? [y/n]: ').upper()
+            # If the user wants to enter file names:
+            if question == 'Y':
+                # Append database and bookings file names to the file name list
+                file_names.append(input("Please enter a seating database file "
+                                        "name: "))
+                file_names.append(input("Please enter a bookings file name: "))
+            # If the user doesn't want to enter file names:
+            elif question == 'N':
+                # Asks the user if they want to use the default file names
+                if input('Is using the default file names ok? [y/n]: '
+                         ).upper() == 'Y':
+                    # Append default file names to the file name list
+                    file_names.append('airline_seating.db')
+                    file_names.append('bookings.csv')
+                # If not, ask to exit
+                else:
+                    # If user elects to exit
+                    question = input('Would you like to exit? [y/n]: ').upper()
+                    if question == 'Y':
+                        # Exit
+                        exit("User exit. No update to database file.")
+                    # If not:
+                    elif question == "N":
+                        # Restart loop
+                        continue
+                    else:
+                        # Exit
+                        exit("Sorry, only [y/n] accepted. Exiting program. No "
+                             "update to database file. ")
+
+            # If user answers neither Y or N
+            else:
+                # If the user wants to try again
+                question = input('Looks like an error. Would you like to '
+                                 'try again?  [y/n]: ').upper()
+                if question == 'Y':
+                    # Restart loop
+                    continue
+                elif question == 'N':
+                    exit("User exit. No update to database file.")
+                # If the user wants to exit
+                else:
+                    # Exit
+                    exit("Sorry, only [y/n] accepted. Exiting program. No  "
+                         "update to database file. ")
+
+        # If 2 command line arguments are given,
+        # 'seat_assign_13560567_16200584.py' and another:
+        elif len(command_args) == 2:
+            # Ask the user to define database and bookings file names
+            question = input('Sorry, you need to enter two valid file '
+                             'names. '
+                             'Would you like to define a seating database and '
+                             'bookings filename? [y/n]: ').upper()
+            # If the user wants to enter file names:
+            if question == 'Y':
+                # Append file names to the file name list
+                file_names.append(input("Please enter a seating database file "
+                                        "name: "))
+                file_names.append(input("Please enter a bookings file name: "))
+            # If the user doesn't want to enter file names:
+            elif question == 'N':
+                # Asks the user if they want to use the default file names
+                if input('Is using the default file names ok? [y/n]: '
+                         ).upper() == 'Y':
+                    # Append default file names to the file name list
+                    file_names.append('airline_seating.db')
+                    file_names.append('bookings.csv')
+                # If not, ask to exit
+                else:
+                    # If user elects to exit
+                    question = input('Would you like to exit? [y/n]: ').upper()
+                    if question == 'Y':
+                        # Exit
+                        exit("User exit. No update to database file.")
+                    # If not:
+                    elif question == "N":
+                        # Restart loop
+                        continue
+                    else:
+                        # Exit
+                        exit("Sorry, only [y/n] accepted. Exiting program. No "
+                             "update to database file. ")
+            # If user answers neither Y or N
+            else:
+                # If the user wants to try again
+                question = input('Looks like an error. Would you like to try '
+                                 'again?  [y/n]: ').upper()
+                if question == 'Y':
+                    # Restart loop
+                    continue
+                elif question == 'N':
+                    exit("User exit. No update to database file.")
+                # If the user wants to exit
+                else:
+                    # Exit
+                    exit("Sorry, only [y/n] accepted. Exiting program. No "
+                         "update to database file. ")
+        # If three commands are given, 'seat_assign_13456456_16200584.py',
+        # seating database file name, and bookings file name
+        elif len(command_args) == 3:
+            # Append the given file names to the file names list
+            file_names.append(command_args[1])
+            file_names.append(command_args[2])
+        # In all other circumstances, use first two arguments as file names
+        else:
+            # Append the given file names to the file names list
+            file_names.append(command_args[1])
+            file_names.append(command_args[2])
+
+        # Check given file names are real files that can be opened
+        if not check_file_exists(file_names[0]):
+            # If not, prompt the user to try again
+            question = input("I can't find that database file. Would you "
+                             "like to try again? [y/n]: ").upper()
+            if question == 'Y':
+                # Restart loop
+                file_names = []
+                continue
+            # If the user does not want to try again
+            elif question == "N":
+                # Exit
+                exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
+        elif not check_file_exists(file_names[1]):
+            # If not, prompt the user to try again
+            question = input("I can't find that bookings file. Would you "
+                             "like to try again? [y/n]: ").upper()
+            if question == 'Y':
+                # Restart loop
+                file_names = []
+                continue
+            # If the user does not want to try again
+            elif question == "N":
+                # Exit
+                exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
+
+        if not check_file_name(file_names):
+            question = input("Sorry your file names are either too short or "
+                             "not in the correct format. Would you like to "
+                             "try  again? [y/n]: ").upper()
+            if question == 'Y':
+                # Restart loop
+                file_names = []
+                continue
+            # If the user does not want to try again
+            elif question == "N":
+                # Exit
+                exit("User exit. No update to database file.")
+            else:
+                exit("Sorry, only [y/n] accepted. Exiting program. No "
+                     "update to database file. ")
+
+    # Return file names
+    return file_names[0], file_names[1]
+
+
+# A function to check that the files exist in the directory
+def check_file_exists(filename):
+    # Return True if the file exists in the directory
+    return os.path.isfile(filename)
+
+
+# A function to check that the seating database and bookings file names have
+# the correct extensions. Also checks that the file names are greater than
+# zero in length (i.e. they are one or more characters long).
+def check_file_name(file_names_list):
+    if len(file_names_list[0]) > 3 and len(file_names_list[1]) > 4:
+        if file_names_list[0][-3:] == ".db" and file_names_list[1][-4:] ==  \
+                ".csv":
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
+# A function to create an m*n zeros numpy array that has the same dimensions
+#  as the airline seating plane.
+def create_zeros_array():
+    with conn:
+        cur.execute("SELECT * FROM rows_cols")
+
+        rows_cols_list = cur.fetchone()
+        no_rows = rows_cols_list[0]
+        col_letters = rows_cols_list[1]
+    no_cols = 0
+    list_of_col_letters = []
+    for letter in col_letters:
+        no_cols += 1
+        list_of_col_letters.append(letter)
+    row_col_matrix = np.zeros((no_rows, no_cols))
+
+    # want to return a 1s and zeros matrix
+    return row_col_matrix, list_of_col_letters
+
+
+# A function which gets the information from the "metrics" table in the
+# database. Returns a list which contains: the number of passengers refused
+# and the number of passengers seated away from their party.
+def get_metrics():
+    with conn:
+        cur.execute("SELECT * FROM metrics")
+        metrics_list = cur.fetchone()
+        no_refused = metrics_list[0]
+        no_seated_away = metrics_list[1]
+    metrics_list = [no_refused, no_seated_away]
+    return metrics_list
+
+
+# A function to search through the seating table and update the  m*n zeros
+# array with 1's where ever a seat is occupied.
+def find_occupied():
+    with conn:
+        cur.execute("SELECT * FROM seating")
+
+        rows = cur.fetchall()
+
+        for row in rows:
+            if row[2] == "":
+                pass
+            else:
+                for letter in col_letters_list:
+                    if row[1] == letter:
+                        # print(letter, col_letters_list.index(letter))
+                        zeros_array[row[0]-1][col_letters_list.index(letter)] \
+                                                                        = 1
+                        # print(row[0])
+                        # print(row[1])
+                        # print(row[2])
+    return zeros_array
+
+
+# A function to update the seating database with the new booking information.
+# new_booking must be a list of lists in the form (for two seats):
+# [[row number, column letter, name], [row number, column number, name]]
+#
+# or for one booking/seat:
+# [[row number, column letter, name]]
+#
+# So it has to be a list inside a list!
+def update_db(new_booking, new_metrics):
+    for i1 in range(len(new_booking)):
+        with conn:
+            cur.execute("UPDATE seating SET name=? WHERE row=? and seat=?",
+                        (next_new_booking[i1][2], next_new_booking[i1][0],
+                         next_new_booking[i1][1]))
+    with conn:
+        cur.execute("UPDATE metrics SET passengers_refused=?, "
+                    "passengers_separated=?", (new_metrics[0], new_metrics[1]))
+
+
+# save the seating database and bookings file names.
+seating_database, bookings = check_args(sys.argv)
+
+# Connect to the database using sqlite2's .connect() method which returns a
+# connection object.
+conn = sqlite3.connect(seating_database)
+
+# From the connection we get a cursor object.
 cur = conn.cursor()
 
-#Prints all of the tables
-with conn:
-    #Tables names are stored in sqlite_master
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+# Cave the m*n zeros array and the column letters in a list.
+zeros_array, col_letters_list = create_zeros_array()
 
-    list_of_tables = cur.fetchall()
+# Convert the empty zeros array into a ones and zeros array, with ones being
+# present where ever a seat is occupied
+binary_db = find_occupied()
 
-    for table1 in list_of_tables:
-        print(table1[0])
-#The tables stored in airline_seating.db are: metrics, row_cols and seating
+# get the initial metrics from the database
+initial_metrics_list = get_metrics()
 
-print()
 
-#print out the info in metrics
-with conn:
-    cur.execute("SELECT * FROM metrics")
+# -----------------------------------------------------------------------------
+# Testing that the database successfully updates:
+next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
 
-    rows = cur.fetchall()
+# update_db() works for one booking or multiple bookings, eg:
+# next_new_booking = [[1, "A", "Celine Dione"]]
 
-    for row in rows:
-        print(row)
+# Define a metrics list
+new_metrics_list = [10, 0]
+# new_metrics_list = [10, 5]
 
-print()
+# update the database with the booking info and metric list
+update_db(next_new_booking, new_metrics_list)
 
-# print out the info in rows_cols
-with conn:
-    cur.execute("SELECT * FROM rows_cols")
-
-    rows = cur.fetchall()
-
-    for row in rows:
-        print(row)
-
-print()
-
-# print out the info in seating
+# Print out the seating database - for testing purposes
 with conn:
     cur.execute("SELECT * FROM seating")
+    seating_bookings = cur.fetchall()
+    print(seating_bookings)
 
-    rows = cur.fetchall()
+    cur.execute("SELECT * FROM metrics")
+    metrics = cur.fetchall()
+    print(metrics)
 
-    for row in rows:
-        print(row)
+
+# -----------------------------------------------------------------------------
 
 
-#release the resources
+# todo-Remi solve seating.
+# When a booking is made, save the entries where the the seats are
+# allocated in a list so that the database can also be updated. So store the
+# booking name, row, and column letter in a separate list called
+# "next_new_booking".
+#
+# After solving the seating for each line in the csv file, initialise this list
+# again (start with an empty list for each booking) and append the new bookings
+# in this format: row number, column letter and booking name. A fresh list
+# after every booking makes updating the database easier! :)
+#
+# The function I've written "update_db()" will take each entry in this list
+# ("next_new_booking") and update the database accordingly.
+#
+# The column letters are stored in a list called "col_letters_list".For the
+# sample database, "airline_seating.db" it is in the form ['A', 'C', 'D', 'F'].
+# Use the col_letters_list's indices to convert to and from column numbers and
+# column letters in order to store these letters in the list
+# "next_new_booking".
+#
+#
+#
+# Also can you create a list called "new_metrics_list"? This list needs to
+# be incremented after every booking (you'll have add the new metrics to the
+# old metrics) so the function "update_db()" can just update the "metrics"
+# table in the database. This list should be in the form [number of
+# passengers refused, number of passengers seated away from another member
+# of their party].
+#
+#
+#
+# So the "next_new_booking" list needs to only contain the information from
+# the current booking (no information from previous bookings).
+#
+# And the "new_metrics_list" needs to be a running tally of the metrics
+# (have to add on the new metrics to the old metrics).
+
+
+# release the resources
 conn.close()
