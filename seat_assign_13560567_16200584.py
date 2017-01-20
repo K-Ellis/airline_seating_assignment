@@ -314,7 +314,7 @@ next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
 # next_new_booking = [[1, "A", "Celine Dione"]]
 
 # Define a metrics list
-new_metrics_list = [10, 0]
+new_metrics_list = [0, 0]
 # new_metrics_list = [10, 5]
 
 # update the database with the booking info and metric list
@@ -371,6 +371,137 @@ with conn:
 # And the "new_metrics_list" needs to be a running tally of the metrics
 # (have to add on the new metrics to the old metrics).
 
+
+
+
+import numpy as np
+from operator import itemgetter
+
+# Read the Ones and Zeros matrix
+
+reshapedplane = binary_db.reshape((1, 60))
+
+# Result_list classifies in lists of tuples the number of consecutive available or unavailable seats.
+# (0,n) indicates that n seats are available, (1,m) indicates that m seats are occupied
+result_list = []
+for x in binary_db:
+
+    current = x[0]
+    count = 0
+    for value in x:
+        if value == current:
+            count += 1
+        else:
+            result_list.append((int(current), count))
+            current = value
+            count = 1
+
+    result_list.append((int(current), count))
+# Read the bookings
+import itertools
+
+bookings = np.genfromtxt('bookings.csv', dtype=None, delimiter=',')
+new_booking = []
+for y in bookings:
+
+    partysize = list(y)
+    # We identify the position of consecutive seats available that match the partysize required
+    b = next((x for x in result_list if x[0] == 0 and x[1] >= partysize[1]), None)
+
+    if b == None:
+        if sum([x[1] for x in result_list if x[0] == 1]) + partysize[1] <= binary_db.size:
+            for _ in itertools.repeat(None, partysize[1]):
+
+                c = next(x for x in result_list if x[0] == 0)
+
+                c_position = result_list.index(c)
+
+                c_sum_position = sum([x[1] for x in result_list[:c_position]])
+                new_metrics_list[1] += 1
+
+                #print('We attribute the seats ', c_sum_position + 1, 'to ', partysize[0], 'who booked ', partysize[1],
+                      #'seat(s)')
+
+                new_booking.append([c_sum_position + 1, partysize[0]])
+                reshapedplane[0, c_sum_position] = 1
+
+                result_list = []
+                reshapedplane = reshapedplane.reshape((15, 4))
+                for x in reshapedplane:
+
+                    current = x[0]
+                    count = 0
+                    for value in x:
+                        if value == current:
+                            count += 1
+                        else:
+                            result_list.append((int(current), count))
+                            current = value
+                            count = 1
+
+                    result_list.append((int(current), count))
+                    reshapedplane = reshapedplane.reshape((1, 60))
+
+
+        else:
+            new_metrics_list[0] += 1
+
+
+    else:
+
+        b_position = result_list.index(b)
+        b_sum_position = sum([x[1] for x in result_list[:b_position]])
+
+        print('We attribute the seats ', b_sum_position + 1, 'to', b_sum_position + partysize[1], 'to ', partysize[0],
+              'who booked ', partysize[1], 'seat(s)')
+
+        for k, l in enumerate(range(partysize[1])):
+            new_booking.append([b_sum_position + (k + 1), partysize[0]])
+
+        reshapedplane[0, b_sum_position:(b_sum_position + partysize[1])] = 1
+
+    # The result_list which classifies in lists of tuples the number of consecutive available or unavailable seats has to be updated.
+
+    result_list = []
+    reshapedplane = reshapedplane.reshape((15, 4))
+    for x in reshapedplane:
+
+        current = x[0]
+        count = 0
+        for value in x:
+            if value == current:
+                count += 1
+            else:
+                result_list.append((int(current), count))
+                current = value
+                count = 1
+
+        result_list.append((int(current), count))
+        reshapedplane = reshapedplane.reshape((1, 60))
+    # We sort the new_booking list by the number of seat
+    new_booking = sorted(new_booking, key=itemgetter(0))
+
+
+for k in range(1, binary_db.size):
+    if (next((x for x in new_booking if x[0] == k), None)) == None:
+        new_booking.append([k, b'None'])
+    new_booking = sorted(new_booking, key=itemgetter(0))
+
+#M_new_booking is used to  transform new_booking  which has the shape [[seat number, name]] into
+#next_new_booking  which has the shape [[row number, column letter, name]]
+M_new_booking = []
+
+phi = 1
+for k in range(1, binary_db.shape[0] + 1):
+    for j in range(len(col_letters_list)):
+        M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
+
+    phi += len(col_letters_list)
+
+next_new_booking = list(x for x in M_new_booking if x[2] != 'None')
+print(next_new_booking)
+print(new_metrics_list)
+update_db(next_new_booking, new_metrics_list)
 
 # release the resources
 conn.close()
