@@ -1,9 +1,22 @@
 import sqlite3
 #Connect to the database using sqlite2's .connect() method which returns a
 #connection object
-conn = sqlite3.connect("airline_seating.db")
+conn = sqlite3.connect("airline_seating_test.db")
 #From the connection we get a cursor object
 cur = conn.cursor()
+
+#create a database with different name, dimensin, col letters
+
+def create_db(rows, col_letters):
+    cur.execute("CREATE TABLE metrics(passengers_refused INT, "
+                "passengers_separated INT)")
+    cur.execute("INSERT INTO metrics VALUES(0,0)")
+
+    cur.execute("CREATE TABLE rows_cols(nrows INT,seats TEXT)")
+    cur.execute("INSERT INTO rows_cols VALUES(?,?)", (rows, col_letters))
+
+    cur.execute("CREATE TABLE seating(row INT, seat TEXT, name TEXT)")
+    cur.execute("INSERT INTO seating VALUES(?,?)", (rows, col_letters))
 
 def print_entries(name):
     # Prints all of the tables

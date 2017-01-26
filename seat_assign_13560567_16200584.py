@@ -379,7 +379,7 @@ from operator import itemgetter
 
 # Read the Ones and Zeros matrix
 
-reshapedplane = binary_db.reshape((1, 60))
+reshapedplane = binary_db.reshape((1, binary_db.size))
 
 # Result_list classifies in lists of tuples the number of consecutive available or unavailable seats.
 # (0,n) indicates that n seats are available, (1,m) indicates that m seats are occupied
@@ -397,6 +397,7 @@ for x in binary_db:
             count = 1
 
     result_list.append((int(current), count))
+print(result_list)
 # Read the bookings
 import itertools
 
@@ -426,7 +427,7 @@ for y in bookings:
                 reshapedplane[0, c_sum_position] = 1
 
                 result_list = []
-                reshapedplane = reshapedplane.reshape((15, 4))
+                reshapedplane = reshapedplane.reshape(binary_db.shape)
                 for x in reshapedplane:
 
                     current = x[0]
@@ -440,7 +441,7 @@ for y in bookings:
                             count = 1
 
                     result_list.append((int(current), count))
-                    reshapedplane = reshapedplane.reshape((1, 60))
+                    reshapedplane = reshapedplane.reshape((1, binary_db.size))
 
 
         else:
@@ -463,7 +464,7 @@ for y in bookings:
     # The result_list which classifies in lists of tuples the number of consecutive available or unavailable seats has to be updated.
 
     result_list = []
-    reshapedplane = reshapedplane.reshape((15, 4))
+    reshapedplane = reshapedplane.reshape(binary_db.shape)
     for x in reshapedplane:
 
         current = x[0]
@@ -477,7 +478,7 @@ for y in bookings:
                 count = 1
 
         result_list.append((int(current), count))
-        reshapedplane = reshapedplane.reshape((1, 60))
+        reshapedplane = reshapedplane.reshape((1, binary_db.size))
     # We sort the new_booking list by the number of seat
     new_booking = sorted(new_booking, key=itemgetter(0))
 
@@ -494,7 +495,8 @@ M_new_booking = []
 phi = 1
 for k in range(1, binary_db.shape[0] + 1):
     for j in range(len(col_letters_list)):
-        M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
+        M_new_booking.append([k, col_letters_list[j], list(x[1] for x in
+                                                           new_booking if x[0] == phi + j)[0].decode('UTF-8')])
 
     phi += len(col_letters_list)
 
