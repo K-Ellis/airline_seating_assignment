@@ -2,6 +2,7 @@ import sqlite3
 import numpy as np
 import sys
 import os
+from operator import itemgetter
 
 # Can run through the command line with:
 # python seat_assign_13560567_16200584.py airline_seating.db bookings.csv
@@ -334,18 +335,17 @@ with conn:
 # -----------------------------------------------------------------------------
 
 
-# todo-Remi solve seating.
 # When a booking is made, save the entries where the the seats are
 # allocated in a list so that the database can also be updated. So store the
 # booking name, row, and column letter in a separate list called
 # "next_new_booking".
 #
-# After solving the seating for each line in the csv file, initialise this list
-# again (start with an empty list for each booking) and append the new bookings
+# After solving the seating for each line in the csv file,  this list initialises
+# again (start with an empty list for each booking) and  the new bookings are appended
 # in this format: row number, column letter and booking name. A fresh list
 # after every booking makes updating the database easier! :)
 #
-# The function I've written "update_db()" will take each entry in this list
+# The function  "update_db()" will take each entry in this list
 # ("next_new_booking") and update the database accordingly.
 #
 # The column letters are stored in a list called "col_letters_list".For the
@@ -354,15 +354,9 @@ with conn:
 # column letters in order to store these letters in the list
 # "next_new_booking".
 #
-#
-#
-# Also can you create a list called "new_metrics_list"? This list needs to
-# be incremented after every booking (you'll have add the new metrics to the
-# old metrics) so the function "update_db()" can just update the "metrics"
-# table in the database. This list should be in the form [number of
-# passengers refused, number of passengers seated away from another member
-# of their party].
-#
+#  The "new_metrics_list" is incremented after every booking
+#  This list is in the form [number of passengers refused,
+#  number of passengers seated away from another member# of their party].
 #
 #
 # So the "next_new_booking" list needs to only contain the information from
@@ -373,13 +367,12 @@ with conn:
 
 
 
+# Read the Ones and Zeros matrix and convert it into an array composed of  1 row and n columns.
+# n represents the total number of seats (binary_db.size)
 
-import numpy as np
-from operator import itemgetter
 
-# Read the Ones and Zeros matrix
+reshapedplane = binary_db.reshape((1,  binary_db.size))
 
-reshapedplane = binary_db.reshape((1, binary_db.size))
 
 # Result_list classifies in lists of tuples the number of consecutive available or unavailable seats.
 # (0,n) indicates that n seats are available, (1,m) indicates that m seats are occupied
@@ -406,26 +399,30 @@ new_booking = []
 for y in bookings:
 
     partysize = list(y)
-    # We identify the position of consecutive seats available that match the partysize required
+    # We identify the position of consecutive seats available that match the required partysize
     b = next((x for x in result_list if x[0] == 0 and x[1] >= partysize[1]), None)
-
+        # If the number of consecutive avaialable seats is smaller than the partysize...
     if b == None:
+        #...And if the partysize can fit into the plane...
         if sum([x[1] for x in result_list if x[0] == 1]) + partysize[1] <= binary_db.size:
+            # ...We allocate a seat to each passenger of the party, irrespectively of the party (s)he belongs to.
+            #In other words, passengers can be seated away from other member of the party.
             for _ in itertools.repeat(None, partysize[1]):
-
+                #c is the next available seat
                 c = next(x for x in result_list if x[0] == 0)
 
                 c_position = result_list.index(c)
 
                 c_sum_position = sum([x[1] for x in result_list[:c_position]])
+
+                #Counts the number of passengers seated away from other member of the party
                 new_metrics_list[1] += 1
 
-                #print('We attribute the seats ', c_sum_position + 1, 'to ', partysize[0], 'who booked ', partysize[1],
-                      #'seat(s)')
 
                 new_booking.append([c_sum_position + 1, partysize[0]])
                 reshapedplane[0, c_sum_position] = 1
 
+                # The result_list which classifies in lists of tuples the number of consecutive available or unavailable seats has to be updated.
                 result_list = []
                 reshapedplane = reshapedplane.reshape(binary_db.shape)
                 for x in reshapedplane:
@@ -441,20 +438,20 @@ for y in bookings:
                             count = 1
 
                     result_list.append((int(current), count))
-                    reshapedplane = reshapedplane.reshape((1, binary_db.size))
+
+                    reshapedplane = reshapedplane.reshape((1,  binary_db.size))
 
 
+        #This is the case when there are too few seats available. So passengers are refused.
         else:
             new_metrics_list[0] += 1
 
-
+    #In all other cases, we can allocate enough consecutive seats to match the partysize. So that passengers are seated next to other members of the party.
     else:
 
         b_position = result_list.index(b)
         b_sum_position = sum([x[1] for x in result_list[:b_position]])
 
-        print('We attribute the seats ', b_sum_position + 1, 'to', b_sum_position + partysize[1], 'to ', partysize[0],
-              'who booked ', partysize[1], 'seat(s)')
 
         for k, l in enumerate(range(partysize[1])):
             new_booking.append([b_sum_position + (k + 1), partysize[0]])
@@ -478,11 +475,13 @@ for y in bookings:
                 count = 1
 
         result_list.append((int(current), count))
-        reshapedplane = reshapedplane.reshape((1, binary_db.size))
+
+        reshapedplane = reshapedplane.reshape((1,  binary_db.size))
+
     # We sort the new_booking list by the number of seat
     new_booking = sorted(new_booking, key=itemgetter(0))
 
-
+#This loop creates None items in the new_booking list to represent the seats which were already asssigned based on the initial database.
 for k in range(1, binary_db.size):
     if (next((x for x in new_booking if x[0] == k), None)) == None:
         new_booking.append([k, b'None'])
@@ -492,14 +491,22 @@ for k in range(1, binary_db.size):
 #next_new_booking  which has the shape [[row number, column letter, name]]
 M_new_booking = []
 
-phi = 1
-for k in range(1, binary_db.shape[0] + 1):
-    for j in range(len(col_letters_list)):
-        M_new_booking.append([k, col_letters_list[j], list(x[1] for x in
-                                                           new_booking if x[0] == phi + j)[0].decode('UTF-8')])
 
-    phi += len(col_letters_list)
+NoneCheckList=list(x[1] for x in new_booking for x in new_booking)
+#The test below checks if the plane is full before processing further.
+if all(item == b'None' for item in NoneCheckList):
+    print('This plane is full')
 
+else:
+    phi = 1
+    for k in range(1, binary_db.shape[0] + 1):
+        for j in range(len(col_letters_list)):
+
+
+            M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
+
+        phi += len(col_letters_list)
+#next_new_booking eventually includes the name of the passengers asscoiated with their seat number.
 next_new_booking = list(x for x in M_new_booking if x[2] != 'None')
 print(next_new_booking)
 print(new_metrics_list)
