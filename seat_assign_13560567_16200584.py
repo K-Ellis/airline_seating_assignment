@@ -370,7 +370,9 @@ with conn:
 # Read the Ones and Zeros matrix and convert it into an array composed of  1 row and n columns.
 # n represents the total number of seats (binary_db.size)
 
+
 reshapedplane = binary_db.reshape((1,  binary_db.size))
+
 
 # Result_list classifies in lists of tuples the number of consecutive available or unavailable seats.
 # (0,n) indicates that n seats are available, (1,m) indicates that m seats are occupied
@@ -388,6 +390,7 @@ for x in binary_db:
             count = 1
 
     result_list.append((int(current), count))
+print(result_list)
 # Read the bookings
 import itertools
 
@@ -435,7 +438,9 @@ for y in bookings:
                             count = 1
 
                     result_list.append((int(current), count))
+
                     reshapedplane = reshapedplane.reshape((1,  binary_db.size))
+
 
         #This is the case when there are too few seats available. So passengers are refused.
         else:
@@ -470,7 +475,9 @@ for y in bookings:
                 count = 1
 
         result_list.append((int(current), count))
+
         reshapedplane = reshapedplane.reshape((1,  binary_db.size))
+
     # We sort the new_booking list by the number of seat
     new_booking = sorted(new_booking, key=itemgetter(0))
 
@@ -484,6 +491,7 @@ for k in range(1, binary_db.size):
 #next_new_booking  which has the shape [[row number, column letter, name]]
 M_new_booking = []
 
+
 NoneCheckList=list(x[1] for x in new_booking for x in new_booking)
 #The test below checks if the plane is full before processing further.
 if all(item == b'None' for item in NoneCheckList):
@@ -493,6 +501,7 @@ else:
     phi = 1
     for k in range(1, binary_db.shape[0] + 1):
         for j in range(len(col_letters_list)):
+
 
             M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
 
