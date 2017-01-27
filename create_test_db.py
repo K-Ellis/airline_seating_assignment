@@ -23,9 +23,13 @@ def create_db(rows, cols, col_letters, col_letters_list, db_name):
 
 
 #rows, columns, column letters, col letters in a list, name of database
-#create 4 different databases
-create_db(2, 5, "ABCDE", ["A","B","C","D","E"], "test_2by5.db")
-create_db(1000, 10, "ABCDEFGHIJ", ["A","B","C","D","E","F","G","H","I","J"],
-          "test_2000by10.db")
-create_db(20, 3, "ABC", ["A","B","C"], "test_20by3.db")
-create_db(10, 2, "ABC", ["A","B","C"], "test_10by2.db")
+#create 4 different databases:
+# create_db(2, 5, "ABCDE", ["A","B","C","D","E"], "test_2by5.db")
+# create_db(1000, 10, "ABCDEFGHIJ", ["A","B","C","D","E","F","G","H","I","J"],
+#           "test_1000by10.db")
+# create_db(20, 3, "ABC", ["A","B","C"], "test_20by3.db")
+# create_db(10, 2, "ABC", ["A","B","C"], "test_10by2.db")
+
+
+create_db(100, 10, "ABCDEFGHIJ", ["A","B","C","D","E","F","G","H","I","J"],
+          "test_100by10.db")
