@@ -301,15 +301,16 @@ zeros_array, col_letters_list = create_zeros_array()
 # Convert the empty zeros array into a ones and zeros array, with ones being
 # present where ever a seat is occupied
 binary_db = find_occupied()
-print(binary_db)
-print(type(binary_db))
+# print(binary_db)
+# print(type(binary_db))
+
 # get the initial metrics from the database
 initial_metrics_list = get_metrics()
 
 
 # -----------------------------------------------------------------------------
 # Testing that the database successfully updates:
-next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
+# next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
 
 # update_db() works for one booking or multiple bookings, eg:
 # next_new_booking = [[1, "A", "Celine Dione"]]
@@ -319,17 +320,17 @@ new_metrics_list = [0, 0]
 # new_metrics_list = [10, 5]
 
 # update the database with the booking info and metric list
-update_db(next_new_booking, new_metrics_list)
+# update_db(next_new_booking, new_metrics_list)
 
 # Print out the seating database - for testing purposes
-with conn:
-    cur.execute("SELECT * FROM seating")
-    seating_bookings = cur.fetchall()
-    print(seating_bookings)
-
-    cur.execute("SELECT * FROM metrics")
-    metrics = cur.fetchall()
-    print(metrics)
+# with conn:
+#     cur.execute("SELECT * FROM seating")
+#     seating_bookings = cur.fetchall()
+#     print(seating_bookings)
+#
+#     cur.execute("SELECT * FROM metrics")
+#     metrics = cur.fetchall()
+#     print(metrics)
 
 
 # -----------------------------------------------------------------------------
@@ -490,6 +491,7 @@ for k in range(1, binary_db.size):
 #M_new_booking is used to  transform new_booking  which has the shape [[seat number, name]] into
 #next_new_booking  which has the shape [[row number, column letter, name]]
 M_new_booking = []
+
 
 
 NoneCheckList=list(x[1] for x in new_booking for x in new_booking)
