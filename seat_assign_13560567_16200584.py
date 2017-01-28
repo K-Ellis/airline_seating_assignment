@@ -427,7 +427,6 @@ for y in bookings:
                 result_list = []
                 reshapedplane = reshapedplane.reshape(binary_db.shape)
                 for x in reshapedplane:
-
                     current = x[0]
                     count = 0
                     for value in x:
@@ -437,34 +436,22 @@ for y in bookings:
                             result_list.append((int(current), count))
                             current = value
                             count = 1
-
                     result_list.append((int(current), count))
-
                     reshapedplane = reshapedplane.reshape((1,  binary_db.size))
-
-
         #This is the case when there are too few seats available. So passengers are refused.
         else:
             new_metrics_list[0] += 1
-
     #In all other cases, we can allocate enough consecutive seats to match the partysize. So that passengers are seated next to other members of the party.
     else:
-
         b_position = result_list.index(b)
         b_sum_position = sum([x[1] for x in result_list[:b_position]])
-
-
         for k, l in enumerate(range(partysize[1])):
             new_booking.append([b_sum_position + (k + 1), partysize[0]])
-
         reshapedplane[0, b_sum_position:(b_sum_position + partysize[1])] = 1
-
     # The result_list which classifies in lists of tuples the number of consecutive available or unavailable seats has to be updated.
-
     result_list = []
     reshapedplane = reshapedplane.reshape(binary_db.shape)
     for x in reshapedplane:
-
         current = x[0]
         count = 0
         for value in x:
@@ -474,11 +461,8 @@ for y in bookings:
                 result_list.append((int(current), count))
                 current = value
                 count = 1
-
         result_list.append((int(current), count))
-
         reshapedplane = reshapedplane.reshape((1,  binary_db.size))
-
     # We sort the new_booking list by the number of seat
     new_booking = sorted(new_booking, key=itemgetter(0))
 
@@ -500,14 +484,17 @@ if all(item == b'None' for item in NoneCheckList):
     print('This plane is full')
 
 else:
-    phi = 1
-    for k in range(1, binary_db.shape[0] + 1):
-        for j in range(len(col_letters_list)):
+    try:
+        phi = 1
+        for k in range(1, binary_db.shape[0] + 1):
+            for j in range(len(col_letters_list)):
 
 
-            M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
+                M_new_booking.append([k, col_letters_list[j], list(x[1] for x in new_booking if x[0] == phi + j)[0].decode('UTF-8')])
 
-        phi += len(col_letters_list)
+            phi += len(col_letters_list)
+    except IndexError:
+        print('The number of bookings is smaller than  the maximum seating capacity of the plane')
 #next_new_booking eventually includes the name of the passengers asscoiated with their seat number.
 next_new_booking = list(x for x in M_new_booking if x[2] != 'None')
 print(next_new_booking)
