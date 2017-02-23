@@ -307,70 +307,8 @@ binary_db = find_occupied()
 # get the initial metrics from the database
 initial_metrics_list = get_metrics()
 
-
-# -----------------------------------------------------------------------------
-# Testing that the database successfully updates:
-# next_new_booking = [[1, "A", "Kieron Ellis"], [1, "C", "Remi Paris"]]
-
-# update_db() works for one booking or multiple bookings, eg:
-# next_new_booking = [[1, "A", "Celine Dione"]]
-
 # Define a metrics list
 new_metrics_list = [0, 0]
-# new_metrics_list = [10, 5]
-
-# update the database with the booking info and metric list
-# update_db(next_new_booking, new_metrics_list)
-
-# Print out the seating database - for testing purposes
-# with conn:
-#     cur.execute("SELECT * FROM seating")
-#     seating_bookings = cur.fetchall()
-#     print(seating_bookings)
-#
-#     cur.execute("SELECT * FROM metrics")
-#     metrics = cur.fetchall()
-#     print(metrics)
-
-
-# -----------------------------------------------------------------------------
-
-
-# When a booking is made, save the entries where the the seats are
-# allocated in a list so that the database can also be updated. So store the
-# booking name, row, and column letter in a separate list called
-# "next_new_booking".
-#
-# After solving the seating for each line in the csv file,  this list initialises
-# again (start with an empty list for each booking) and  the new bookings are appended
-# in this format: row number, column letter and booking name. A fresh list
-# after every booking makes updating the database easier! :)
-#
-# The function  "update_db()" will take each entry in this list
-# ("next_new_booking") and update the database accordingly.
-#
-# The column letters are stored in a list called "col_letters_list".For the
-# sample database, "airline_seating.db" it is in the form ['A', 'C', 'D', 'F'].
-# Use the col_letters_list's indices to convert to and from column numbers and
-# column letters in order to store these letters in the list
-# "next_new_booking".
-#
-#  The "new_metrics_list" is incremented after every booking
-#  This list is in the form [number of passengers refused,
-#  number of passengers seated away from another member# of their party].
-#
-#
-# So the "next_new_booking" list needs to only contain the information from
-# the current booking (no information from previous bookings).
-#
-# And the "new_metrics_list" needs to be a running tally of the metrics
-# (have to add on the new metrics to the old metrics).
-
-
-
-# Read the Ones and Zeros matrix and convert it into an array composed of  1 row and n columns.
-# n represents the total number of seats (binary_db.size)
-
 
 reshapedplane = binary_db.reshape((1,  binary_db.size))
 
@@ -391,7 +329,7 @@ for x in binary_db:
             count = 1
 
     result_list.append((int(current), count))
-print(result_list)
+# print(result_list)
 # Read the bookings
 import itertools
 
@@ -497,8 +435,8 @@ else:
         print('The number of bookings is smaller than  the maximum seating capacity of the plane')
 #next_new_booking eventually includes the name of the passengers asscoiated with their seat number.
 next_new_booking = list(x for x in M_new_booking if x[2] != 'None')
-print(next_new_booking)
-print(new_metrics_list)
+# print(next_new_booking)
+# print(new_metrics_list)
 update_db(next_new_booking, new_metrics_list)
 
 # release the resources
